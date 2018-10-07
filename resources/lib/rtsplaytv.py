@@ -294,7 +294,7 @@ def _parse_weekday_time(input_string):
             'Sonntag',
         )
         special_weekdays = ('gestern', 'heute', 'morgen')
-    else:
+    else: # BU == 'rts'
         weekdays = (
             'Lundi',
             'Mardi',
@@ -479,8 +479,6 @@ class RTSPlayTV(object):
         if not string_response:
             log('No video ids found on %s' % url)
         readable_string_response = string_response.replace('&quot;', '"')
-        # Note: other business units might have other ids, so this is
-        # only expected to work for videos of SRF.
         id_regex = r'''(?x)
                         \"id\"
                         \s*:\s*
@@ -596,11 +594,11 @@ class RTSPlayTV(object):
                 'isFolder': True,
                 'displayItem': get_boolean_setting('Live_TV')
             }, {
-                # SRF.ch live
+                # RTS.ch live
                 'name': LANGUAGE(30070),
                 'mode': 18,
                 'isFolder': True,
-                'displayItem': get_boolean_setting('SRF_Live')
+                'displayItem': get_boolean_setting('RTS_Live')
             }
         ]
         for menu_item in main_menu_list:
@@ -740,7 +738,7 @@ class RTSPlayTV(object):
         Keyword arguments:
         name     -- the type of the list, can be 'Newest', 'Most clicked',
                     'Soon offline' or 'Trending'.
-        topic_id -- the SRF topic id for the given topic, this is only needed
+        topic_id -- the topic id for the given topic, this is only needed
                     for the types 'Newest' and 'Most clicked' (default: None)
         page     -- an integer representing the current page in the list
         """
@@ -864,7 +862,7 @@ class RTSPlayTV(object):
 
     def read_all_available_shows(self):
         """
-        Downloads a list of all available SRF shows and returns this list.
+        Downloads a list of all available shows and returns this list.
         """
         log('read_all_available_shows')
         json_url = ('http://il.srgssr.ch/integrationlayer/1.0/ue/%s/tv/'
@@ -914,7 +912,7 @@ class RTSPlayTV(object):
     def build_all_shows_menu(self, favids=None):
         """
         Builds a list of folders containing the names of all the current
-        SRF shows.
+        shows.
 
         Keyword arguments:
         favids -- A list of show ids (strings) respresenting the favourite
@@ -955,7 +953,7 @@ class RTSPlayTV(object):
                 thumbnail = image_url + '/scale/width/668'\
                     if image_url else ICON
                 banner = image_url.replace(
-                    'WEBVISUAL', 'HEADER_SRF_PLAYER') if image_url else None
+                    'WEBVISUAL', 'HEADER_RTS_PLAYER') if image_url else None
             except (KeyError, IndexError):
                 image_url = FANART
                 thumbnail = ICON
@@ -1007,7 +1005,7 @@ class RTSPlayTV(object):
         for a show given by its show id.
 
         Keyword arguments:
-        show_id   -- the SRF id of the show
+        show_id   -- the id of the show
         page_hash -- the page hash to get the list of
                      another page (default: None)
         """
@@ -1074,7 +1072,7 @@ class RTSPlayTV(object):
         entry for the segment will be created.
 
         Keyword arguments:
-        video_id         -- the SRF id of the video
+        video_id         -- the id of the video
         include_segments -- indicates if the segments (if available) of the
                             video should be included in the list
                             (default: True)
@@ -1234,7 +1232,7 @@ class RTSPlayTV(object):
         Gets the video stream information of a video and starts to play it.
 
         Keyword arguments:
-        video_id -- the SRF video of the video to play
+        video_id -- the video of the video to play
         """
         log('play_video, video_id = %s' % video_id)
         json_url = ('https://il.srgssr.ch/integrationlayer/2.0/%s/'
