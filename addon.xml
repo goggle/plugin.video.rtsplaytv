@@ -21,7 +21,9 @@
     <website>https://www.rts.ch/play/tv</website>
     <email>seileralex@gmail.com</email>
     <source>https://github.com/goggle/plugin.video.rtsplaytv</source>
-    <news></news>
+    <news>v0.9.1 (2018-10-07)
+First release
+    </news>
     <assets>
         <icon>resources/icon.png</icon>
         <fanart>resources/fanart.png</fanart>
