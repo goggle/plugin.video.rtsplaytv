@@ -15,7 +15,7 @@ Bring the full power of the [RTS Play TV media library](https://www.rts.ch/play/
  - [x] Choose between SD and HD quality.
  - [x] Subtitle support.
  - [ ] Livestreams that are exclusively broadcasted on RTS.ch (only available in Switzerland).
- - [ ] Live TV support: RTS 1, RTS 2 and RTS info (only available in Switzerland).
+ - [x] Live TV support: RTS 1, RTS 2 and RTS info (only available in Switzerland).
 
 <!-- ## Planned features
  - [ ] Twitter integration: For shows with a RTS hashtag get the tweets which were emitted during the show on the screen.
