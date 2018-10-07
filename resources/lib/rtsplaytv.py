@@ -100,8 +100,6 @@ def log(msg, level=xbmc.LOGDEBUG):
     if DEBUG:
         if level == xbmc.LOGERROR:
             msg += ' ,' + traceback.format_exc()
-    # print(type(msg))
-    # print(type(level))
     xbmc.log(ADDON_ID + '-' + ADDON_VERSION + '-' + msg, level)
 
 
@@ -973,114 +971,22 @@ class RTSPlayTV(object):
 
     def build_tv_menu(self):
         """
-        Builds the overview over the SRF TV channels (SRF 1, SRF 2, SRF info).
+        Builds the overview over the RTS TV channels.
         """
-        def extract_channel_id(webpage):
-            """
-            Extracts the TV channel id from the webpage of the channel.
-
-            Keyword arguments:
-            webpage -- the content of the webpage of a TV channel
-            """
-            channel_id_regex = r'''(?x)
-                                   <iframe.+src\s*=\s*.+
-                                   (?P<channel_id>%s)
-                                ''' % IDREGEX
-            match = re.search(channel_id_regex, webpage)
-            if match:
-                return match.group('channel_id')
-            return None
-
-        channels = ['srf-1', 'srf-2', 'srf-info']
-        for channel in channels:
-            url = 'https://www.srf.ch/livestream/player/%s' % channel
-            webpage = self.open_url(url, use_cache=False)
-            channel_id = extract_channel_id(webpage)
-            if not channel_id:
-                log('build_tv_menu: Could not extract channel id for %s.'
-                    % channel)
-                continue
-            urn = 'urn:srf:video:%s' % channel_id
+        overview_url = 'https://www.rts.ch/play/tv/live/overview'
+        overview_json = json.loads(self.open_url(overview_url, use_cache=False))
+        urns = [x['urn'] for x in overview_json['teaser']]
+        for urn in urns:
             json_url = ('https://il.srgssr.ch/integrationlayer/2.0/'
                         'mediaComposition/byUrn/%s.json') % urn
             info_json = json.loads(self.open_url(json_url, use_cache=False))
             try:
                 json_entry = info_json['chapterList'][0]
             except (KeyError, IndexError):
-                log('build_tv_menu: Unexpected json structure for channel %s'
-                    % channel)
+                log('build_tv_menu: Unexpected json structure for element %s'
+                    % urn)
                 continue
             self.build_entry(json_entry)
-
-    def build_live_menu(self):
-        """
-        Builds the menu listing the currently available SRF.ch livestreams.
-        """
-        def get_live_ids():
-            """
-            Downloads the webpage 'https://www.srf.ch' and scrapes it for
-            possible livestreams. If some live events were found, a list
-            of live ids will be returned, otherwise an empty list.
-            """
-            url = 'https://www.%s.ch' % BU
-            webpage = self.open_url(url, use_cache=False)
-            id_regex = r'data-sport-id=\"(?P<live_id>\d+)\"'
-            live_ids = []
-            try:
-                for match in re.finditer(id_regex, webpage):
-                    live_ids.append(match.group('live_id'))
-            except StopIteration:
-                pass
-            return live_ids
-
-        def get_srf3_live_ids():
-            """
-            Returns a list of Radio SRF 3 video streams.
-            """
-            url = 'https://www.%s.ch/radio-srf-3' % BU
-            webpage = self.open_url(url, use_cache=False)
-            video_id_regex = r'''(?x)
-                                   popupvideoplayer\?id=
-                                   (?P<video_id>%s)
-                                ''' % IDREGEX
-            live_ids = []
-            try:
-                for match in re.finditer(video_id_regex, webpage):
-                    live_ids.append(match.group('video_id'))
-            except StopIteration:
-                pass
-            return live_ids
-
-        live_ids = get_live_ids()
-        for lid in live_ids:
-            api_url = ('https://event.api.swisstxt.ch/v1/events/'
-                       'rts/byEventItemId/?eids=%s') % lid
-            try:
-                live_json = json.loads(self.open_url(api_url))
-                entry = live_json[0]
-            except Exception:
-                log('build_live_menu: No entry found for live id %s.' % lid)
-                continue
-            if entry.get('streamType') == 'noStream':
-                continue
-            title = entry.get('title')
-            stream_url = entry.get('hls')
-            image = entry.get('imageUrl', '')
-
-            # Again, this strange RTS behaviour: We need to strip 
-            # the string '/16x9' from the URL:
-            image = image.strip('/16x9')
-
-            item = xbmcgui.ListItem(label=title)
-            item.setProperty('IsPlayable', 'true')
-            item.setArt({'thumb': image})
-            purl = self.build_url(mode=51, name=stream_url)
-            xbmcplugin.addDirectoryItem(
-                int(sys.argv[1]), purl, item, isFolder=False)
-
-        srf3_ids = get_srf3_live_ids()
-        for vid in srf3_ids:
-            self.build_episode_menu(vid, include_segments=False)
 
     def play_livestream(self, stream_url):
         """
@@ -1440,8 +1346,6 @@ def run():
         RTSPlayTV().build_topics_menu('Trending', page=page)
     elif mode == 17:
         RTSPlayTV().build_dates_overview_menu()
-    elif mode == 18:
-        RTSPlayTV().build_live_menu()
     elif mode == 19:
         RTSPlayTV().manage_favourite_shows()
     elif mode == 20:
