@@ -824,7 +824,8 @@ class RTSPlayTV(object):
             log('build_newest_favourite_menu. Open URL %s.' % json_url)
             response = json.loads(self.open_url(json_url))
             try:
-                banner_image = str_or_none(response['show']['bannerImageUrl'], default='')
+                banner_image = str_or_none(
+                    response['show']['bannerImageUrl'], default='')
                 if banner_image.endswith('/3x1'):
                     banner_image += '/scale/width/1000'
             except KeyError:
@@ -974,7 +975,8 @@ class RTSPlayTV(object):
         Builds the overview over the RTS TV channels.
         """
         overview_url = 'https://www.rts.ch/play/tv/live/overview'
-        overview_json = json.loads(self.open_url(overview_url, use_cache=False))
+        overview_json = json.loads(
+            self.open_url(overview_url, use_cache=False))
         urns = [x['urn'] for x in overview_json['teaser']]
         for urn in urns:
             json_url = ('https://il.srgssr.ch/integrationlayer/2.0/'
@@ -1026,7 +1028,8 @@ class RTSPlayTV(object):
         json_response = json.loads(self.open_url(json_url))
 
         try:
-            banner_image = str_or_none(json_response['show']['bannerImageUrl'], default='')
+            banner_image = str_or_none(
+                json_response['show']['bannerImageUrl'], default='')
             if banner_image.endswith('/3x1'):
                 banner_image += '/scale/width/1000'
         except KeyError:
@@ -1105,7 +1108,8 @@ class RTSPlayTV(object):
             return
 
         try:
-            banner = str_or_none(json_response['show']['bannerImageUrl'], default='')
+            banner = str_or_none(
+                json_response['show']['bannerImageUrl'], default='')
             if banner.endswith('/3x1'):
                 banner += '/scale/width/1000'
         except KeyError:
@@ -1159,7 +1163,7 @@ class RTSPlayTV(object):
         title = json_entry.get('title')
         vid = json_entry.get('id')
         description = json_entry.get('description')
-        
+
         image = json_entry.get('imageUrl', '')
         # RTS image links have a strange appendix '/16x9'.
         # This needs to be removed from the URL:
