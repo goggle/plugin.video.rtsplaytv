@@ -40,7 +40,7 @@ If you like this plugin, consider to make a donation to the author:
 | Bitcoin | 14d2as82kQ3mRoCSyrnHNoDi8PkFvxMMgP | ![Bitcoin address](https://raw.githubusercontent.com/goggle/plugin.video.srfplaytv/af1c696004d9b42c730dc55f7e66596ec3521b99/bitcoin.png) |
 
 
-<!-- ## Screenshots -->
-<!-- ![Main menu](https://raw.githubusercontent.com/goggle/plugin.video.rtsplaytv/master/resources/screenshot-01.png) -->
-<!-- ![A list menu](https://raw.githubusercontent.com/goggle/plugin.video.rtsplaytv/master/resources/screenshot-02.png) -->
-<!-- ![Episode information](https://raw.githubusercontent.com/goggle/plugin.video.rtsplaytv/master/resources/screenshot-03.png) -->
+## Screenshots
+![Category overview](https://raw.githubusercontent.com/goggle/plugin.video.rtsplaytv/master/resources/screenshot-01.png)
+![A list menu](https://raw.githubusercontent.com/goggle/plugin.video.rtsplaytv/master/resources/screenshot-02.png)
+![Episode information](https://raw.githubusercontent.com/goggle/plugin.video.rtsplaytv/master/resources/screenshot-03.png)
