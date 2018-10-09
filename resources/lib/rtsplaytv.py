@@ -297,7 +297,7 @@ def _parse_weekday_time(input_string):
             'Sonntag',
         )
         special_weekdays = ('gestern', 'heute', 'morgen')
-    else: # BU == 'rts'
+    else:  # BU == 'rts'
         weekdays = (
             'Lundi',
             'Mardi',
