@@ -21,7 +21,10 @@
     <website>https://www.rts.ch/play/tv</website>
     <email>seileralex@gmail.com</email>
     <source>https://github.com/goggle/plugin.video.rtsplaytv</source>
-    <news>v0.9.2 (2018-10-07)
+    <news>v0.9.3 (TODO)
+ - Allow plugin to parse the date indicator "Aujourd'hui"
+ - Fix bug that crashed plugin after unsuccesful date parsing.
+v0.9.2 (2018-10-07)
 First release
     </news>
     <assets>
