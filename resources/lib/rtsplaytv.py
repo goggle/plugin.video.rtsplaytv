@@ -1323,7 +1323,7 @@ class RTSPlayTV(object):
         log('play_video, auth_url = %s' % auth_url)
         play_item = xbmcgui.ListItem(video_id, path=auth_url)
         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, play_item)
-    
+
     @staticmethod
     def build_youtube_menu():
         data_file = os.path.join(xbmc.translatePath(DATA_URI),
