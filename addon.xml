@@ -3,7 +3,7 @@
   <requires>
     <import addon="xbmc.python" version="2.25.0"/>
     <import addon="script.module.simplecache" version="1.0.0"/>
-    <import addon="plugin.video.youtube" version="6.2.2" optional="true"/>
+    <import addon="plugin.video.youtube" version="6.2.2"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
@@ -25,7 +25,9 @@
     <website>https://www.rts.ch/play/tv</website>
     <email>seileralex@gmail.com</email>
     <source>https://github.com/goggle/plugin.video.rtsplaytv</source>
-    <news>v1.1.0 (2018-11-13)
+    <news>v 1.Y.Z (YYYY-MM-DD) (TODO)
+ - Improve RTS on YouTube.
+v1.1.0 (2018-11-13)
  - Add support for the official RTS YouTube channels.
 v1.0.0 (2018-11-07)
  - Add french translation.
