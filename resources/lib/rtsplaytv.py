@@ -1269,8 +1269,8 @@ class RTSPlayTV(object):
             log('play_video: no stream URL found.')
             return
 
-        first_chapter = chapter_list[0]
-        resource_list = first_chapter.get('resourceList', [])
+        chapter = next((e for e in chapter_list if e.get('id') == video_id), chapter_list[0])
+        resource_list = chapter.get('resourceList', [])
         if not resource_list:
             log('play_video: no stream URL found.')
             return
@@ -1296,7 +1296,7 @@ class RTSPlayTV(object):
 
         start_time = end_time = None
         if 'segmentUrn' in json_response:  # video_id is the ID of a segment
-            segment_list = first_chapter.get('segmentList', [])
+            segment_list = chapter.get('segmentList', [])
             for segment in segment_list:
                 if segment.get('id') == video_id:
                     start_time = float_or_none(
