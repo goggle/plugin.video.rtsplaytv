@@ -148,10 +148,21 @@ def run():
     # elif mode == 26:
     #     RTSPlayTV().build_tv_menu()
     elif mode == 30:
+        RTSPlayTV().build_youtube_main_menu()
+    elif mode in (31, 32, 33):
         channel_ids = RTSPlayTV().read_youtube_channels(
             YOUTUBE_CHANNELS_FILENAME)
-        youtube_channels.YoutubeChannels(
-            int(sys.argv[1]), channel_ids).build_youtube_menu()
+        if mode == 31:
+            plugin_url = RTSPlayTV().build_url(mode=33, name='%s')
+            youtube_channels.YoutubeChannels(
+                int(sys.argv[1]), channel_ids).build_channel_overview_menu(
+                    plugin_channel_url=plugin_url)
+        elif mode == 32:
+            RTSPlayTV().build_youtube_newest_videos_menu(
+                channel_ids, mode, page=page)
+        elif mode == 33:
+            RTSPlayTV().build_youtube_channel_menu(
+                channel_ids, name, mode, page=page, page_token=page_hash)
     elif mode == 50:
         RTSPlayTV().play_video(name)
     elif mode == 51:
