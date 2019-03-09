@@ -30,7 +30,6 @@ import xbmcplugin
 import xbmcaddon
 
 import srgssr
-import youtube_channels
 
 ADDON_ID = 'plugin.video.rtsplaytv'
 REAL_SETTINGS = xbmcaddon.Addon(id=ADDON_ID)
@@ -39,7 +38,7 @@ ADDON_VERSION = REAL_SETTINGS.getAddonInfo('version')
 DEBUG = (REAL_SETTINGS.getSetting('Enable_Debugging') == 'true')
 CONTENT_TYPE = 'videos'
 
-YOUTUBE_CHANNELS_FILENAME = 'youtube_channels.json'
+# YOUTUBE_CHANNELS_FILENAME = 'youtube_channels.json'
 
 
 class RTSPlayTV(srgssr.SRGSSR):
@@ -149,21 +148,13 @@ def run():
     #     RTSPlayTV().build_tv_menu()
     elif mode == 30:
         RTSPlayTV().build_youtube_main_menu()
-    elif mode in (31, 32, 33):
-        channel_ids = RTSPlayTV().read_youtube_channels(
-            YOUTUBE_CHANNELS_FILENAME)
-        if mode == 31:
-            plugin_url = RTSPlayTV().build_url(mode=33, name='%s')
-            youtube_channels.YoutubeChannels(
-                int(sys.argv[1]), channel_ids,
-                ADDON_ID, DEBUG).build_channel_overview_menu(
-                    plugin_channel_url=plugin_url)
-        elif mode == 32:
-            RTSPlayTV().build_youtube_newest_videos_menu(
-                channel_ids, mode, page=page)
-        elif mode == 33:
-            RTSPlayTV().build_youtube_channel_menu(
-                channel_ids, name, mode, page=page, page_token=page_hash)
+    elif mode == 31:
+        RTSPlayTV().build_youtube_channel_overview_menu(33)
+    elif mode == 32:
+        RTSPlayTV().build_youtube_newest_videos_menu(mode, page=page)
+    elif mode == 33:
+        RTSPlayTV().build_youtube_channel_menu(
+            name, mode, page=page, page_token=page_hash)
     elif mode == 50:
         RTSPlayTV().play_video(name)
     elif mode == 51:
