@@ -155,7 +155,7 @@ def run():
         if mode == 31:
             plugin_url = RTSPlayTV().build_url(mode=33, name='%s')
             youtube_channels.YoutubeChannels(
-                int(sys.argv[1]), channel_ids).build_channel_overview_menu(
+                int(sys.argv[1]), channel_ids, ADDON_ID).build_channel_overview_menu(
                     plugin_channel_url=plugin_url)
         elif mode == 32:
             RTSPlayTV().build_youtube_newest_videos_menu(
