@@ -108,7 +108,7 @@ def run():
             'Most_Clicked_Shows',
             'Soon_Offline',
             'Shows_By_Date',
-            'Live_TV',
+            # 'Live_TV',
             # 'SRF_Live',
             'RTS_YouTube'
         ]
@@ -145,8 +145,8 @@ def run():
         RTSPlayTV().build_date_menu(name)
     elif mode == 25:
         RTSPlayTV().pick_date()
-    elif mode == 26:
-        RTSPlayTV().build_tv_menu()
+    # elif mode == 26:
+    #     RTSPlayTV().build_tv_menu()
     elif mode == 30:
         channel_ids = RTSPlayTV().read_youtube_channels(
             YOUTUBE_CHANNELS_FILENAME)
