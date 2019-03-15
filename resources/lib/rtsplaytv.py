@@ -22,13 +22,14 @@
 import sys
 import traceback
 
-import urllib
-import urlparse
+try:  # Python 3
+    from urllib.parse import unquote_plus
+    from urllib.parse import parse_qsl
+except ImportError:  # Python 2
+    from urlparse import parse_qsl
+    from urllib import unquote_plus
 
-import xbmc
-import xbmcplugin
-import xbmcaddon
-
+from kodi_six import xbmc, xbmcaddon, xbmcplugin
 import srgssr
 
 ADDON_ID = 'plugin.video.rtsplaytv'
@@ -37,8 +38,6 @@ ADDON_NAME = REAL_SETTINGS.getAddonInfo('name')
 ADDON_VERSION = REAL_SETTINGS.getAddonInfo('version')
 DEBUG = (REAL_SETTINGS.getSetting('Enable_Debugging') == 'true')
 CONTENT_TYPE = 'videos'
-
-# YOUTUBE_CHANNELS_FILENAME = 'youtube_channels.json'
 
 
 class RTSPlayTV(srgssr.SRGSSR):
@@ -62,7 +61,7 @@ def log(msg, level=xbmc.LOGDEBUG):
 
 
 def get_params():
-    return dict(urlparse.parse_qsl(sys.argv[2][1:]))
+    return dict(parse_qsl(sys.argv[2][1:]))
 
 
 def run():
@@ -71,11 +70,11 @@ def run():
     """
     params = get_params()
     try:
-        url = urllib.unquote_plus(params["url"])
+        url = unquote_plus(params["url"])
     except Exception:
         url = None
     try:
-        name = urllib.unquote_plus(params["name"])
+        name = unquote_plus(params["name"])
     except Exception:
         name = None
     try:
@@ -83,11 +82,11 @@ def run():
     except Exception:
         mode = None
     try:
-        page_hash = urllib.unquote_plus(params['page_hash'])
+        page_hash = unquote_plus(params['page_hash'])
     except Exception:
         page_hash = None
     try:
-        page = urllib.unquote_plus(params['page'])
+        page = unquote_plus(params['page'])
     except Exception:
         page = None
 
@@ -108,7 +107,6 @@ def run():
             'Soon_Offline',
             'Shows_By_Date',
             # 'Live_TV',
-            # 'SRF_Live',
             'RTS_YouTube'
         ]
         RTSPlayTV().build_main_menu(identifiers)
