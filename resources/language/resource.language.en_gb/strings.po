@@ -143,6 +143,10 @@ msgctxt "#30074"
 msgid "RTS on YouTube"
 msgstr ""
 
+msgctxt "#30075"
+msgid "Search"
+msgstr ""
+
 msgctxt "#30100"
 msgid "Failed to open URL."
 msgstr ""
