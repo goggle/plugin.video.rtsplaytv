@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/goggle/plugin.video.rtsplaytv/master/resources/icon.png" width="256">
 
-**RTS Play TV** (plugin.video.rtsplaytv) is a Kodi plugin to access the French part of the the video library of the Swiss Radio and Television (RTS).
+**RTS Play TV** (plugin.video.rtsplaytv) is a Kodi plugin to access the French part of the video library of the Swiss Radio and Television.
 
 ## Goals of the plugin
 Bring the full power of the [RTS Play TV media library](https://www.rts.ch/play/tv) on your TV (or another device) via [Kodi](https://kodi.tv/). The plugin aims to be close to the original media library, so that the experience of consuming media through the browser or through Kodi should be similar.
