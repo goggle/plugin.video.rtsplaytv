@@ -84,6 +84,14 @@ msgid "Shows by date"
 msgstr ""
 
 msgctxt "#30058"
+msgid "Topics"
+msgstr ""
+
+msgctxt "#30059"
+msgid "Most searched TV shows"
+msgstr ""
+
+msgctxt "#30058"
 msgid "Today"
 msgstr ""
 
