@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.rtsplaytv" name="RTS Play TV" version="1.9.9" provider-name="Alexander Seiler">
+<addon id="plugin.video.rtsplaytv" name="RTS Play TV" version="2.0.0" provider-name="Alexander Seiler">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
-    <import addon="script.module.srgssr" version="1.8.0"/>
+    <import addon="script.module.srgssr" version="2.0.0"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
@@ -25,9 +25,13 @@
     <license>GNU GENERAL PUBLIC LICENSE. Version 3, June 2007</license>
     <forum>https://forum.kodi.tv/showthread.php?tid=336266</forum>
     <website>https://www.rts.ch/play/tv</website>
-    <email>seileralex@gmail.com</email>
     <source>https://github.com/goggle/plugin.video.rtsplaytv</source>
-    <news>v1.6.0 (2019-10-09)
+    <news>v2.0.0 (TBD)
+  - Finalize Python 3 support.
+  - Adapt to SRGSSR APIv3.
+  - Remove support for audio because it is not included in the SRGSSR API anymore.
+
+v1.6.0 (2019-10-09)
  - Add search feature
  - Remove 'Newest YouTube videos' menu.
 
