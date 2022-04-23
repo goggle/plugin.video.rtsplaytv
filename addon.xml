@@ -22,7 +22,7 @@
     <disclaimer lang="it_IT">Alcuni contenuti sono geograficamente bloccati e quindi visibili solo in Svizzera.</disclaimer>
     <language>fr</language>
     <platform>all</platform>
-    <license>GNU GENERAL PUBLIC LICENSE. Version 3, June 2007</license>
+    <license>GPL-3.0-or-later</license>
     <forum>https://forum.kodi.tv/showthread.php?tid=336266</forum>
     <website>https://www.rts.ch/play/tv</website>
     <source>https://github.com/goggle/plugin.video.rtsplaytv</source>
@@ -30,17 +30,7 @@
   - Finalize Python 3 support.
   - Adapt to SRGSSR APIv3.
   - Remove support for audio because it is not included in the SRGSSR API anymore.
-
-v1.6.0 (2019-10-09)
- - Add search feature
- - Remove 'Newest YouTube videos' menu.
-
-v1.5.0 (2019-03-15)
- - Port all code that is reusable by other SRG SSR plugin's into seperate library script.module.srgssr.
- - Improve YouTube channels support.
- - Remove support of Live TV (DRM protected).
- - Fix extraction of Live events.
- - Add full Python 3 support.</news>
+</news>
     <assets>
         <icon>resources/icon.png</icon>
         <fanart>resources/fanart.png</fanart>
@@ -48,6 +38,7 @@ v1.5.0 (2019-03-15)
         <screenshot>resources/screenshot-02.png</screenshot>
         <screenshot>resources/screenshot-03.png</screenshot>
         <screenshot>resources/screenshot-04.png</screenshot>
+        <screenshot>resources/screenshot-05.png</screenshot>
     </assets>
   </extension>
 </addon>
