@@ -1,7 +1,16 @@
 {
-    "channels": [{
+    "channels": [
+        {
             "name": "RTS - Radio Télévision Suisse",
             "channel": "UCQyyY2Izw8hin7c8T5YY4sg"
+        },
+        {
+            "name": "RTS Sport",
+            "channel": "UC0mHPa3T9kzMd0jogiN6nhA"
+        },
+        {
+            "name": "RTS Kids",
+            "channel": "UCxNRDGdDIkWLah3lVTKc0dg"
         },
         {
             "name": "Les archives de la RTS",
