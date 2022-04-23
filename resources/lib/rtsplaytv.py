@@ -99,7 +99,7 @@ def run():
             'All_Shows',
             'Favourite_Shows',
             'Newest_Favourite_Shows',
-            'Topics',
+            # 'Topics',
             'Most_Searched_TV_Shows',
             'Shows_By_Date',
             'Search',
