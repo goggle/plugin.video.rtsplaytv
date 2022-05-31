@@ -154,8 +154,6 @@ def run():
         RTSPlayTV().build_menu_by_urn(name)
     elif mode == 200:
         RTSPlayTV().build_homepage_menu()
-    elif mode == 500:
-        RTSPlayTV().playback_not_supported_dialog(name)
     elif mode == 1000:
         RTSPlayTV().build_menu_apiv3(name, mode, page, page_hash)
 
