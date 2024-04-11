@@ -1,4 +1,4 @@
-name: Kodi addon checker on matrix
+name: Kodi addon checker on nexus
 
 on: [push, pull_request]
 
@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-    - name: Test with kodi-addon-checker on branch matrix
+    - name: Test with kodi-addon-checker on branch nexus
       run: |
         pip install kodi-addon-checker
-        kodi-addon-checker --branch matrix .
+        kodi-addon-checker --branch nexus .
