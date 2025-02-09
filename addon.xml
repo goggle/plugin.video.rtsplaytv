@@ -2,7 +2,7 @@
 <addon id="plugin.video.rtsplaytv" name="RTS Play TV" version="2.2.5" provider-name="Alexander Seiler">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
-    <import addon="script.module.srgssr" version="2.2.4"/>
+    <import addon="script.module.srgssr" version="2.2.5"/>
     <import addon="script.module.youtube_channels" version="0.2.0"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="addon.py">
@@ -27,8 +27,9 @@
     <forum>https://forum.kodi.tv/showthread.php?tid=336266</forum>
     <website>https://www.rts.ch/play/tv</website>
     <source>https://github.com/goggle/plugin.video.rtsplaytv</source>
-    <news>v2.2.5 (TBD)
-  - retrieve subtitles via HTTPS
+    <news>v2.2.5 (2025-02-09)
+  - Retrieve subtitles via HTTPS
+  - Adapt to upstream changes
 
 v2.2.4 (2024-03-21)
   - Fix translatePath errors
