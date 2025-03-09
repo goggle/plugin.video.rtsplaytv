@@ -104,55 +104,49 @@ def run():
             'Search',
             'RTS_YouTube',
         ]
-        RTSPlayTV().build_main_menu(identifiers)
+        RTSPlayTV().menu_builder.build_main_menu(identifiers)
     elif mode == 10:
-        RTSPlayTV().build_all_shows_menu()
+        RTSPlayTV().menu_builder.build_all_shows_menu()
     elif mode == 11:
-        RTSPlayTV().build_favourite_shows_menu()
+        RTSPlayTV().menu_builder.build_favourite_shows_menu()
     elif mode == 12:
-        RTSPlayTV().build_newest_favourite_menu(page=page)
+        RTSPlayTV().menu_builder.build_newest_favourite_menu(page=page)
     elif mode == 13:
-        RTSPlayTV().build_topics_menu()
+        RTSPlayTV().menu_builder.build_topics_menu()
     elif mode == 14:
-        RTSPlayTV().build_most_searched_shows_menu()
+        RTSPlayTV().menu_builder.build_most_searched_shows_menu()
     elif mode == 17:
-        RTSPlayTV().build_dates_overview_menu()
-    elif mode == 18:
-        RTSPlayTV().build_live_menu()
+        RTSPlayTV().menu_builder.build_dates_overview_menu()
     elif mode == 19:
         RTSPlayTV().manage_favourite_shows()
-    elif mode == 20:
-        RTSPlayTV().build_show_menu(name, page_hash=page_hash)
     elif mode == 21:
-        RTSPlayTV().build_episode_menu(name)
+        RTSPlayTV().menu_builder.build_episode_menu(name)
     elif mode == 24:
-        RTSPlayTV().build_date_menu(name)
+        RTSPlayTV().menu_builder.build_date_menu(name)
     elif mode == 60:
-        RTSPlayTV().build_specific_date_menu(name)
+        RTSPlayTV().menu_builder.build_specific_date_menu(name)
     elif mode == 25:
-        RTSPlayTV().pick_date()
+        RTSPlayTV().menu_builder.pick_date()
     elif mode == 27:
-        RTSPlayTV().build_search_menu()
+        RTSPlayTV().menu_builder.build_search_menu()
     elif mode == 28:
-        RTSPlayTV().build_search_media_menu(
+        RTSPlayTV().menu_builder.build_search_media_menu(
             mode=mode, name=name, page=page, page_hash=page_hash)
     elif mode == 70:
-        RTSPlayTV().build_recent_search_menu()
+        RTSPlayTV().menu_builder.build_recent_search_menu()
     elif mode == 30:
-        RTSPlayTV().build_youtube_channel_overview_menu(33)
+        RTSPlayTV().youtube_builder.build_youtube_channel_overview_menu(33)
     elif mode == 33:
-        RTSPlayTV().build_youtube_channel_menu(
+        RTSPlayTV().youtube_builder.build_youtube_channel_menu(
             name, mode, page=page, page_token=page_hash)
     elif mode == 50:
-        RTSPlayTV().play_video(name)
-    elif mode == 51:
-        RTSPlayTV().play_livestream(name)
+        RTSPlayTV().player.play_video(name)
     elif mode == 100:
-        RTSPlayTV().build_menu_by_urn(name)
+        RTSPlayTV().menu_builder.build_menu_by_urn(name)
     elif mode == 200:
-        RTSPlayTV().build_homepage_menu()
+        RTSPlayTV().menu_builder.build_homepage_menu()
     elif mode == 1000:
-        RTSPlayTV().build_menu_apiv3(name, mode, page, page_hash)
+        RTSPlayTV().menu_builder.build_menu_apiv3(name, mode, page, page_hash)
 
     xbmcplugin.setContent(int(sys.argv[1]), CONTENT_TYPE)
     xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_UNSORTED)
