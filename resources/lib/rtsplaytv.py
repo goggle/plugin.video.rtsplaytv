@@ -21,7 +21,6 @@ import sys
 import traceback
 import re
 import urllib.request
-import json
 
 from urllib.parse import unquote_plus
 from urllib.parse import parse_qsl
@@ -102,6 +101,27 @@ class RTSPlayTV(srgssr.SRGSSR):
 
                     plugin_url = self.build_url(mode=81, name=sub_page_url)
                     xbmcplugin.addDirectoryItem(self.handle, plugin_url, list_item, isFolder=False)
+
+    def play_sport_stream(self, sub_page_url):
+        """Resolves sub_page_url to a SwissTXT/RTS video URN and plays it."""
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        try:
+            req = urllib.request.Request(sub_page_url, headers=headers)
+            with urllib.request.urlopen(req) as response:
+                sub_html = response.read().decode('utf-8')
+        except Exception as e:
+            log(f"Failed to fetch RTS Sport sub-page: {e}", xbmc.LOGERROR)
+            xbmcgui.Dialog().notification("RTS Sport", "Impossible de charger la page du direct.", xbmcgui.NOTIFICATION_ERROR)
+            return
+
+        urn_match = re.search(r'urn:(swisstxt|rts):video:[a-zA-Z0-9:-]+', sub_html)
+        if urn_match:
+            video_urn = urn_match.group(0)
+            log(f"Found video URN: {video_urn}")
+            self.player.play_video(video_urn)
+        else:
+            log("No video URN found on page", xbmc.LOGERROR)
+            xbmcgui.Dialog().notification("RTS Sport", "Aucun flux vidéo disponible.", xbmcgui.NOTIFICATION_ERROR)
 
 
 def log(msg, level=xbmc.LOGDEBUG):
@@ -216,7 +236,7 @@ def run():
     elif mode == 80:
         RTSPlayTV().build_sport_menu()
     elif mode == 81:
-        pass
+        RTSPlayTV().play_sport_stream(name)
     elif mode == 1000:
         RTSPlayTV().menu_builder.build_menu_apiv3(name, mode, page, page_hash)
 
