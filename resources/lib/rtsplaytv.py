@@ -193,6 +193,12 @@ def run():
         list_item.setArt({"icon": rts.icon})
         sport_url = rts.build_url(mode=80)
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), sport_url, list_item, isFolder=True)
+
+        # Append Direct TV to the main menu
+        tv_list_item = xbmcgui.ListItem(label="Direct TV")
+        tv_list_item.setArt({"icon": rts.icon})
+        tv_url = rts.build_url(mode=90)
+        xbmcplugin.addDirectoryItem(int(sys.argv[1]), tv_url, tv_list_item, isFolder=True)
     elif mode == 10:
         RTSPlayTV().menu_builder.build_all_shows_menu()
     elif mode == 11:
@@ -237,6 +243,8 @@ def run():
         RTSPlayTV().build_sport_menu()
     elif mode == 81:
         RTSPlayTV().play_sport_stream(name)
+    elif mode == 90:
+        pass
     elif mode == 1000:
         RTSPlayTV().menu_builder.build_menu_apiv3(name, mode, page, page_hash)
 
