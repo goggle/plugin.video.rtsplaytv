@@ -44,6 +44,65 @@ class RTSPlayTV(srgssr.SRGSSR):
     def __init__(self):
         super(RTSPlayTV, self).__init__(int(sys.argv[1]), bu="rts", addon_id=ADDON_ID)
 
+    def build_sport_menu(self):
+        """Scrapes RTS Sport programmes, groups them by date headers, and renders them in Kodi."""
+        url = "https://www.rts.ch/sport/programmes/"
+        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'}
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req) as response:
+                html = response.read().decode('utf-8')
+        except Exception as e:
+            log(f"Failed to fetch RTS Sport page: {e}", xbmc.LOGERROR)
+            return
+
+        items = []
+        for m in re.finditer(r'<h2 class=\"module-title epg-title\">([^<]+)</h2>', html):
+            items.append((m.start(), 'header', m.group(1).strip()))
+
+        matches = list(re.finditer(r'<div class=\"(grid-item epg-item [^\"]*)\"', html))
+        for i, m in enumerate(matches):
+            start_idx = m.end()
+            end_idx = matches[i + 1].start() if i + 1 < len(matches) else len(html)
+            block_class = m.group(1)
+            block_content = html[start_idx:end_idx]
+            items.append((m.start(), 'card', (block_class, block_content)))
+
+        items.sort(key=lambda x: x[0])
+
+        for item in items:
+            if item[1] == 'header':
+                header_text = item[2]
+                list_item = xbmcgui.ListItem(label=f"--- {header_text} ---")
+                list_item.setProperty("IsPlayable", "false")
+                xbmcplugin.addDirectoryItem(self.handle, self.build_url(mode=80), list_item, isFolder=False)
+            else:
+                block_class, block_content = item[2]
+                is_live = "live" in block_class
+                time_m = re.search(r'<div class=\"time\">([^<]+)</div>', block_content)
+                url_m = re.search(r'href=\"([^\"]+whatson:[^\"]+)\"', block_content)
+                title_m = re.search(r'<p class=\"card-title\">([^<]+)</p>', block_content)
+                bait_m = re.search(r'<p class=\"card-bait\">([^<]+)</p>', block_content)
+                img_m = re.search(r'<img [^>]*src=\"([^\"]+)\"', block_content)
+
+                if url_m and title_m:
+                    time_str = time_m.group(1) if time_m else ""
+                    sport_discipline = bait_m.group(1).strip() if bait_m else "Sport"
+                    event_title = title_m.group(1).strip()
+                    sub_page_url = url_m.group(1)
+
+                    prefix = "[COLOR red][LIVE] [/COLOR]" if is_live else f"[{time_str}] "
+                    display_name = f"{prefix}{sport_discipline}: {event_title}"
+
+                    list_item = xbmcgui.ListItem(label=display_name)
+                    list_item.setProperty("IsPlayable", "true")
+                    if img_m:
+                        img_url = img_m.group(1).replace("&amp;", "&")
+                        list_item.setArt({"thumb": img_url})
+
+                    plugin_url = self.build_url(mode=81, name=sub_page_url)
+                    xbmcplugin.addDirectoryItem(self.handle, plugin_url, list_item, isFolder=False)
+
 
 def log(msg, level=xbmc.LOGDEBUG):
     """
@@ -155,7 +214,7 @@ def run():
     elif mode == 200:
         RTSPlayTV().menu_builder.build_homepage_menu()
     elif mode == 80:
-        pass
+        RTSPlayTV().build_sport_menu()
     elif mode == 81:
         pass
     elif mode == 1000:
