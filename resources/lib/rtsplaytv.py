@@ -19,11 +19,15 @@
 
 import sys
 import traceback
+import re
+import urllib.request
+import json
 
 from urllib.parse import unquote_plus
 from urllib.parse import parse_qsl
 
 import xbmc
+import xbmcgui
 import xbmcaddon
 import xbmcplugin
 import srgssr
@@ -102,7 +106,14 @@ def run():
             "Search",
             "RTS_YouTube",
         ]
-        RTSPlayTV().menu_builder.build_main_menu(identifiers)
+        rts = RTSPlayTV()
+        rts.menu_builder.build_main_menu(identifiers)
+
+        # Append RTS Sport to the main menu
+        list_item = xbmcgui.ListItem(label="RTS Sport")
+        list_item.setArt({"icon": rts.icon})
+        sport_url = rts.build_url(mode=80)
+        xbmcplugin.addDirectoryItem(int(sys.argv[1]), sport_url, list_item, isFolder=True)
     elif mode == 10:
         RTSPlayTV().menu_builder.build_all_shows_menu()
     elif mode == 11:
@@ -143,6 +154,10 @@ def run():
         RTSPlayTV().menu_builder.build_menu_by_urn(name)
     elif mode == 200:
         RTSPlayTV().menu_builder.build_homepage_menu()
+    elif mode == 80:
+        pass
+    elif mode == 81:
+        pass
     elif mode == 1000:
         RTSPlayTV().menu_builder.build_menu_apiv3(name, mode, page, page_hash)
 
