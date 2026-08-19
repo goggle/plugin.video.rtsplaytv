@@ -123,6 +123,57 @@ class RTSPlayTV(srgssr.SRGSSR):
             log("No video URN found on page", xbmc.LOGERROR)
             xbmcgui.Dialog().notification("RTS Sport", "Aucun flux vidéo disponible.", xbmcgui.NOTIFICATION_ERROR)
 
+    def build_livetv_menu(self):
+        """Fetches the 24/7 TV program guide and renders live channels with current/next show info."""
+        import json
+        import datetime
+        url = "https://www.rts.ch/play/v3/api/rts/production/tv-program-guide"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req) as response:
+                payload = json.loads(response.read().decode('utf-8'))
+        except Exception as e:
+            log(f"Failed to fetch live TV program guide: {e}", xbmc.LOGERROR)
+            return
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        for item in payload.get("data", []):
+            channel = item.get("channel", {})
+            title = channel.get("title")
+            livestream = channel.get("livestream", {})
+            urn = livestream.get("livestreamUrn")
+            img_url = channel.get("imageUrl") or livestream.get("imageUrl")
+
+            if title and urn:
+                current_show = ""
+                next_show = ""
+
+                for prog in item.get("programList", []):
+                    try:
+                        start = datetime.datetime.fromisoformat(prog["startTime"].replace('Z', '+00:00'))
+                        end = datetime.datetime.fromisoformat(prog["endTime"].replace('Z', '+00:00'))
+                        if start <= now <= end:
+                            current_show = prog["title"]
+                            break
+                        elif start > now:
+                            if not next_show:
+                                formatted_start = start.astimezone().strftime("%H:%M")
+                                next_show = f"À suivre : {prog['title']} ({formatted_start})"
+                    except Exception:
+                        pass
+
+                status = current_show if current_show else next_show
+                display_name = f"{title} - {status}" if status else title
+
+                list_item = xbmcgui.ListItem(label=display_name)
+                list_item.setProperty("IsPlayable", "true")
+                if img_url:
+                    list_item.setArt({"thumb": img_url})
+
+                plugin_url = self.build_url(mode=50, name=urn)
+                xbmcplugin.addDirectoryItem(self.handle, plugin_url, list_item, isFolder=False)
+
 
 def log(msg, level=xbmc.LOGDEBUG):
     """
@@ -244,7 +295,7 @@ def run():
     elif mode == 81:
         RTSPlayTV().play_sport_stream(name)
     elif mode == 90:
-        pass
+        RTSPlayTV().build_livetv_menu()
     elif mode == 1000:
         RTSPlayTV().menu_builder.build_menu_apiv3(name, mode, page, page_hash)
 
