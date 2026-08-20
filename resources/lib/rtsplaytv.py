@@ -135,13 +135,16 @@ class RTSPlayTV(srgssr.SRGSSR):
         # Case 2: Build a specific subdirectory ("sports" or "others")
         else:
             # Fetch scheduled event livestreams
-            scheduled_url = "https://www.rts.ch/play/v3/api/rts/production/scheduled-livestreams"
+            scheduled_url = (
+                "https://il.srgssr.ch/integrationlayer/2.0/rts/mediaList/video/"
+                "scheduledLivestreams?vector=portalplay&pageSize=100"
+            )
             scheduled_events = []
             try:
                 req = urllib.request.Request(scheduled_url, headers=headers)
                 with urllib.request.urlopen(req) as response:
                     scheduled_data = json.loads(response.read().decode('utf-8'))
-                    scheduled_events = scheduled_data.get("data", [])
+                    scheduled_events = scheduled_data.get("mediaList") or scheduled_data.get("data") or []
             except Exception as e:
                 log(f"Failed to fetch scheduled livestreams: {e}", xbmc.LOGWARNING)
 
@@ -158,55 +161,79 @@ class RTSPlayTV(srgssr.SRGSSR):
                 except Exception:
                     pass
 
-            # Filter by sub-category using first-word ALL CAPS heuristic
+            # Filter by sub-category using the Integration Layer's "creatorUser" metadata attribute
             filtered_events = []
             for item in active_and_upcoming:
-                title = item.get("title", "")
-                words = title.strip().split()
-                is_sport = False
-                if words:
-                    first_word = words[0].replace('/', '').replace('-', '')
-                    if first_word.isupper() and len(first_word) >= 3 and not first_word.isdigit():
-                        is_sport = True
+                is_sport = item.get("creatorUser") == "MMSport"
 
                 if (sub_menu == "sports" and is_sport) or (sub_menu == "others" and not is_sport):
                     filtered_events.append(item)
 
-            days_fr = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
-
+            # Group filtered events by local date
+            grouped_events = {}
             for item in filtered_events:
-                title = item.get("title")
-                urn = item.get("urn")
-                img_url = item.get("imageUrl")
+                try:
+                    valid_from = datetime.datetime.fromisoformat(item["validFrom"].replace('Z', '+00:00'))
+                    local_start = valid_from.astimezone()
+                    local_date = local_start.date()
+                    if local_date not in grouped_events:
+                        grouped_events[local_date] = []
+                    grouped_events[local_date].append((local_start, item))
+                except Exception:
+                    pass
 
-                if title and urn:
-                    try:
-                        valid_from = datetime.datetime.fromisoformat(item["validFrom"].replace('Z', '+00:00'))
-                        valid_to = datetime.datetime.fromisoformat(item["validTo"].replace('Z', '+00:00'))
+            sorted_dates = sorted(grouped_events.keys())
 
-                        if valid_from <= now_utc <= valid_to:
-                            prefix = "[COLOR red][LIVE] [/COLOR]"
-                        else:
-                            local_start = valid_from.astimezone()
-                            if local_start.date() == local_now.date():
-                                time_str = f"Aujourd'hui {local_start.strftime('%H:%M')}"
-                            elif local_start.date() == (local_now + datetime.timedelta(days=1)).date():
-                                time_str = f"Demain {local_start.strftime('%H:%M')}"
+            days_fr = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+            months_fr = [
+                "", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+                "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+            ]
+
+            for local_date in sorted_dates:
+                # Build Date Header Label
+                day_name = days_fr[local_date.weekday()]
+                month_name = months_fr[local_date.month]
+
+                if local_date == local_now.date():
+                    header_label = f"--- Aujourd'hui ({day_name}, {local_date.day} {month_name}) ---"
+                elif local_date == (local_now + datetime.timedelta(days=1)).date():
+                    header_label = f"--- Demain ({day_name}, {local_date.day} {month_name}) ---"
+                else:
+                    header_label = f"--- {day_name}, {local_date.day} {month_name} ---"
+
+                # Add Date Header (non-playable)
+                header_item = xbmcgui.ListItem(label=header_label)
+                header_item.setProperty("IsPlayable", "false")
+                xbmcplugin.addDirectoryItem(self.handle, self.build_url(mode=90), header_item, isFolder=False)
+
+                # Render events chronologically for this day
+                events_on_day = grouped_events[local_date]
+                events_on_day.sort(key=lambda x: x[0])
+
+                for start_time, item in events_on_day:
+                    title = item.get("title")
+                    urn = item.get("urn")
+                    img_url = item.get("imageUrl")
+
+                    if title and urn:
+                        try:
+                            valid_to = datetime.datetime.fromisoformat(item["validTo"].replace('Z', '+00:00'))
+                            if start_time <= now_utc <= valid_to:
+                                prefix = "[COLOR red][LIVE] [/COLOR]"
                             else:
-                                day_name = days_fr[local_start.weekday()]
-                                time_str = f"{day_name} {local_start.strftime('%H:%M')}"
-                            prefix = f"[{time_str}] "
-                    except Exception:
-                        prefix = ""
+                                prefix = f"[{start_time.strftime('%H:%M')}] "
+                        except Exception:
+                            prefix = ""
 
-                    display_name = f"{prefix}{title}"
-                    list_item = xbmcgui.ListItem(label=display_name)
-                    list_item.setProperty("IsPlayable", "true")
-                    if img_url:
-                        list_item.setArt({"thumb": img_url})
+                        display_name = f"{prefix}{title}"
+                        list_item = xbmcgui.ListItem(label=display_name)
+                        list_item.setProperty("IsPlayable", "true")
+                        if img_url:
+                            list_item.setArt({"thumb": img_url})
 
-                    plugin_url = self.build_url(mode=50, name=urn)
-                    xbmcplugin.addDirectoryItem(self.handle, plugin_url, list_item, isFolder=False)
+                        plugin_url = self.build_url(mode=50, name=urn)
+                        xbmcplugin.addDirectoryItem(self.handle, plugin_url, list_item, isFolder=False)
 
 
 def log(msg, level=xbmc.LOGDEBUG):
