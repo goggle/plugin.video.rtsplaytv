@@ -119,7 +119,9 @@ class RTSPlayTV(srgssr.SRGSSR):
                 sub_html = response.read().decode('utf-8')
         except Exception as e:
             log(f"Failed to fetch RTS Sport sub-page: {e}", xbmc.LOGERROR)
-            xbmcgui.Dialog().notification("RTS Sport", "Impossible de charger la page du direct.", xbmcgui.NOTIFICATION_ERROR)
+            xbmcgui.Dialog().notification(
+                "RTS Sport", "Impossible de charger la page du direct.", xbmcgui.NOTIFICATION_ERROR
+            )
             return
 
         urn_match = re.search(r'urn:(swisstxt|rts):video:[a-zA-Z0-9:-]+', sub_html)
@@ -132,32 +134,51 @@ class RTSPlayTV(srgssr.SRGSSR):
             xbmcgui.Dialog().notification("RTS Sport", "Aucun flux vidéo disponible.", xbmcgui.NOTIFICATION_ERROR)
 
     def build_livetv_menu(self):
-        """Fetches the 24/7 TV program guide and renders live channels with current/next show info."""
+        """Fetches live channels and enriches them with current/next show info from the program guide."""
         import json
         import datetime
-        url = "https://www.rts.ch/play/v3/api/rts/production/tv-program-guide"
         headers = {'User-Agent': 'Mozilla/5.0'}
+
+        livestreams_url = "https://www.rts.ch/play/v3/api/rts/production/tv-livestreams"
         try:
-            req = urllib.request.Request(url, headers=headers)
+            req = urllib.request.Request(livestreams_url, headers=headers)
             with urllib.request.urlopen(req) as response:
-                payload = json.loads(response.read().decode('utf-8'))
+                livestreams_data = json.loads(response.read().decode('utf-8'))
         except Exception as e:
-            log(f"Failed to fetch live TV program guide: {e}", xbmc.LOGERROR)
+            log(f"Failed to fetch live TV channels: {e}", xbmc.LOGERROR)
             return
 
+        channels = livestreams_data.get("data", [])
+        if not channels:
+            return
+
+        guide_url = "https://www.rts.ch/play/v3/api/rts/production/tv-program-guide"
+        guide_by_channel = {}
+        try:
+            req = urllib.request.Request(guide_url, headers=headers)
+            with urllib.request.urlopen(req) as response:
+                guide_data = json.loads(response.read().decode('utf-8'))
+                for item in guide_data.get("data", []):
+                    ch_id = item.get("channel", {}).get("id")
+                    if ch_id:
+                        guide_by_channel[ch_id] = item.get("programList", [])
+        except Exception as e:
+            log(f"Failed to fetch live TV program guide (falling back to channels-only): {e}", xbmc.LOGWARNING)
+
         now = datetime.datetime.now(datetime.timezone.utc)
-        for item in payload.get("data", []):
-            channel = item.get("channel", {})
+
+        for channel in channels:
             title = channel.get("title")
-            livestream = channel.get("livestream", {})
-            urn = livestream.get("livestreamUrn")
-            img_url = channel.get("imageUrl") or livestream.get("imageUrl")
+            urn = channel.get("livestreamUrn")
+            img_url = channel.get("imageUrl")
+            channel_id = channel.get("channelId")
 
             if title and urn:
                 current_show = ""
                 next_show = ""
 
-                for prog in item.get("programList", []):
+                program_list = guide_by_channel.get(channel_id, [])
+                for prog in program_list:
                     try:
                         start = datetime.datetime.fromisoformat(prog["startTime"].replace('Z', '+00:00'))
                         end = datetime.datetime.fromisoformat(prog["endTime"].replace('Z', '+00:00'))
