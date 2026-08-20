@@ -79,7 +79,7 @@ class RTSPlayTV(srgssr.SRGSSR):
                 block_class, block_content = item[2]
                 is_live = "live" in block_class
                 time_m = re.search(r'<div class=\"time\">([^<]+)</div>', block_content)
-                url_m = re.search(r'href=\"([^\"]+whatson:[^\"]+)\"', block_content)
+                url_m = re.search(r'href=\"([^\"]+)\"', block_content)
                 title_m = re.search(r'<p class=\"card-title\">([^<]+)</p>', block_content)
                 bait_m = re.search(r'<p class=\"card-bait\">([^<]+)</p>', block_content)
                 img_m = re.search(r'<img [^>]*src=\"([^\"]+)\"', block_content)
@@ -104,6 +104,14 @@ class RTSPlayTV(srgssr.SRGSSR):
 
     def play_sport_stream(self, sub_page_url):
         """Resolves sub_page_url to a SwissTXT/RTS video URN and plays it."""
+        # Handle the new SPA URLs directly without scraping
+        if "resultats/#/live/" in sub_page_url:
+            match_id = sub_page_url.split('/')[-1]
+            video_urn = f"urn:swisstxt:video:rts:{match_id}"
+            log(f"Constructed video URN from URL: {video_urn}")
+            self.player.play_video(video_urn)
+            return
+
         headers = {'User-Agent': 'Mozilla/5.0'}
         try:
             req = urllib.request.Request(sub_page_url, headers=headers)
