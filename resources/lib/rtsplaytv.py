@@ -19,7 +19,6 @@
 
 import sys
 import traceback
-import re
 import urllib.request
 
 from urllib.parse import unquote_plus
@@ -43,165 +42,171 @@ class RTSPlayTV(srgssr.SRGSSR):
     def __init__(self):
         super(RTSPlayTV, self).__init__(int(sys.argv[1]), bu="rts", addon_id=ADDON_ID)
 
-    def build_sport_menu(self):
-        """Scrapes RTS Sport programmes, groups them by date headers, and renders them in Kodi."""
-        url = "https://www.rts.ch/sport/programmes/"
-        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'}
-        try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req) as response:
-                html = response.read().decode('utf-8')
-        except Exception as e:
-            log(f"Failed to fetch RTS Sport page: {e}", xbmc.LOGERROR)
-            return
+    def build_livetv_menu(self, sub_menu=None):
+        """Fetches 24/7 channels and scheduled event livestreams.
 
-        items = []
-        for m in re.finditer(r'<h2 class=\"module-title epg-title\">([^<]+)</h2>', html):
-            items.append((m.start(), 'header', m.group(1).strip()))
-
-        matches = list(re.finditer(r'<div class=\"(grid-item epg-item [^\"]*)\"', html))
-        for i, m in enumerate(matches):
-            start_idx = m.end()
-            end_idx = matches[i + 1].start() if i + 1 < len(matches) else len(html)
-            block_class = m.group(1)
-            block_content = html[start_idx:end_idx]
-            items.append((m.start(), 'card', (block_class, block_content)))
-
-        items.sort(key=lambda x: x[0])
-
-        for item in items:
-            if item[1] == 'header':
-                header_text = item[2]
-                list_item = xbmcgui.ListItem(label=f"--- {header_text} ---")
-                list_item.setProperty("IsPlayable", "false")
-                xbmcplugin.addDirectoryItem(self.handle, self.build_url(mode=80), list_item, isFolder=False)
-            else:
-                block_class, block_content = item[2]
-                is_live = "live" in block_class
-                time_m = re.search(r'<div class=\"time\">([^<]+)</div>', block_content)
-                url_m = re.search(r'href=\"([^\"]+)\"', block_content)
-                title_m = re.search(r'<p class=\"card-title\">([^<]+)</p>', block_content)
-                bait_m = re.search(r'<p class=\"card-bait\">([^<]+)</p>', block_content)
-                img_m = re.search(r'<img [^>]*src=\"([^\"]+)\"', block_content)
-
-                if url_m and title_m:
-                    time_str = time_m.group(1) if time_m else ""
-                    sport_discipline = bait_m.group(1).strip() if bait_m else "Sport"
-                    event_title = title_m.group(1).strip()
-                    sub_page_url = url_m.group(1)
-
-                    prefix = "[COLOR red][LIVE] [/COLOR]" if is_live else f"[{time_str}] "
-                    display_name = f"{prefix}{sport_discipline}: {event_title}"
-
-                    list_item = xbmcgui.ListItem(label=display_name)
-                    list_item.setProperty("IsPlayable", "true")
-                    if img_m:
-                        img_url = img_m.group(1).replace("&amp;", "&")
-                        list_item.setArt({"thumb": img_url})
-
-                    plugin_url = self.build_url(mode=81, name=sub_page_url)
-                    xbmcplugin.addDirectoryItem(self.handle, plugin_url, list_item, isFolder=False)
-
-    def play_sport_stream(self, sub_page_url):
-        """Resolves sub_page_url to a SwissTXT/RTS video URN and plays it."""
-        # Handle the new SPA URLs directly without scraping
-        if "resultats/#/live/" in sub_page_url:
-            match_id = sub_page_url.split('/')[-1]
-            video_urn = f"urn:swisstxt:video:rts:{match_id}"
-            log(f"Constructed video URN from URL: {video_urn}")
-            self.player.play_video(video_urn)
-            return
-
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        try:
-            req = urllib.request.Request(sub_page_url, headers=headers)
-            with urllib.request.urlopen(req) as response:
-                sub_html = response.read().decode('utf-8')
-        except Exception as e:
-            log(f"Failed to fetch RTS Sport sub-page: {e}", xbmc.LOGERROR)
-            xbmcgui.Dialog().notification(
-                "RTS Sport", "Impossible de charger la page du direct.", xbmcgui.NOTIFICATION_ERROR
-            )
-            return
-
-        urn_match = re.search(r'urn:(swisstxt|rts):video:[a-zA-Z0-9:-]+', sub_html)
-        if urn_match:
-            video_urn = urn_match.group(0)
-            log(f"Found video URN: {video_urn}")
-            self.player.play_video(video_urn)
-        else:
-            log("No video URN found on page", xbmc.LOGERROR)
-            xbmcgui.Dialog().notification("RTS Sport", "Aucun flux vidéo disponible.", xbmcgui.NOTIFICATION_ERROR)
-
-    def build_livetv_menu(self):
-        """Fetches live channels and enriches them with current/next show info from the program guide."""
+        If sub_menu is None, renders 24/7 channels and folder links for sub-menus.
+        If sub_menu is "sports" or "others", renders only that category of events.
+        """
         import json
         import datetime
         headers = {'User-Agent': 'Mozilla/5.0'}
 
-        livestreams_url = "https://www.rts.ch/play/v3/api/rts/production/tv-livestreams"
-        try:
-            req = urllib.request.Request(livestreams_url, headers=headers)
-            with urllib.request.urlopen(req) as response:
-                livestreams_data = json.loads(response.read().decode('utf-8'))
-        except Exception as e:
-            log(f"Failed to fetch live TV channels: {e}", xbmc.LOGERROR)
-            return
+        # Case 1: Build the main root "Direct TV" page
+        if sub_menu is None:
+            # 1. Fetch available 24/7 livestreams
+            livestreams_url = "https://www.rts.ch/play/v3/api/rts/production/tv-livestreams"
+            try:
+                req = urllib.request.Request(livestreams_url, headers=headers)
+                with urllib.request.urlopen(req) as response:
+                    livestreams_data = json.loads(response.read().decode('utf-8'))
+            except Exception as e:
+                log(f"Failed to fetch live TV channels: {e}", xbmc.LOGERROR)
+                return
 
-        channels = livestreams_data.get("data", [])
-        if not channels:
-            return
+            channels = livestreams_data.get("data", [])
+            if not channels:
+                return
 
-        guide_url = "https://www.rts.ch/play/v3/api/rts/production/tv-program-guide"
-        guide_by_channel = {}
-        try:
-            req = urllib.request.Request(guide_url, headers=headers)
-            with urllib.request.urlopen(req) as response:
-                guide_data = json.loads(response.read().decode('utf-8'))
-                for item in guide_data.get("data", []):
-                    ch_id = item.get("channel", {}).get("id")
-                    if ch_id:
-                        guide_by_channel[ch_id] = item.get("programList", [])
-        except Exception as e:
-            log(f"Failed to fetch live TV program guide (falling back to channels-only): {e}", xbmc.LOGWARNING)
+            # 2. Fetch program guide for EPG data (enriched fallback)
+            guide_url = "https://www.rts.ch/play/v3/api/rts/production/tv-program-guide"
+            guide_by_channel = {}
+            try:
+                req = urllib.request.Request(guide_url, headers=headers)
+                with urllib.request.urlopen(req) as response:
+                    guide_data = json.loads(response.read().decode('utf-8'))
+                    for item in guide_data.get("data", []):
+                        ch_id = item.get("channel", {}).get("id")
+                        if ch_id:
+                            guide_by_channel[ch_id] = item.get("programList", [])
+            except Exception as e:
+                log(f"Failed to fetch live TV program guide (falling back to channels-only): {e}", xbmc.LOGWARNING)
 
-        now = datetime.datetime.now(datetime.timezone.utc)
+            now_utc = datetime.datetime.now(datetime.timezone.utc)
 
-        for channel in channels:
-            title = channel.get("title")
-            urn = channel.get("livestreamUrn")
-            img_url = channel.get("imageUrl")
-            channel_id = channel.get("channelId")
+            # Add 24/7 linear channels
+            for channel in channels:
+                title = channel.get("title")
+                urn = channel.get("livestreamUrn")
+                img_url = channel.get("imageUrl")
+                channel_id = channel.get("channelId")
 
-            if title and urn:
-                current_show = ""
-                next_show = ""
+                if title and urn:
+                    current_show = ""
+                    next_show = ""
 
-                program_list = guide_by_channel.get(channel_id, [])
-                for prog in program_list:
+                    program_list = guide_by_channel.get(channel_id, [])
+                    for prog in program_list:
+                        try:
+                            start = datetime.datetime.fromisoformat(prog["startTime"].replace('Z', '+00:00'))
+                            end = datetime.datetime.fromisoformat(prog["endTime"].replace('Z', '+00:00'))
+                            if start <= now_utc <= end:
+                                current_show = prog["title"]
+                                break
+                            elif start > now_utc:
+                                if not next_show:
+                                    formatted_start = start.astimezone().strftime("%H:%M")
+                                    next_show = f"À suivre : {prog['title']} ({formatted_start})"
+                        except Exception:
+                            pass
+
+                    status = current_show if current_show else next_show
+                    display_name = f"{title} - {status}" if status else title
+
+                    list_item = xbmcgui.ListItem(label=display_name)
+                    list_item.setProperty("IsPlayable", "true")
+                    if img_url:
+                        list_item.setArt({"thumb": img_url})
+
+                    plugin_url = self.build_url(mode=50, name=urn)
+                    xbmcplugin.addDirectoryItem(self.handle, plugin_url, list_item, isFolder=False)
+
+            # Add folder items for the two sub-directories
+            sport_folder_url = self.build_url(mode=90, name="sports")
+            sport_item = xbmcgui.ListItem(label="Sports en direct")
+            sport_item.setArt({"icon": self.icon})
+            xbmcplugin.addDirectoryItem(self.handle, sport_folder_url, sport_item, isFolder=True)
+
+            others_folder_url = self.build_url(mode=90, name="others")
+            others_item = xbmcgui.ListItem(label="Les autres directs")
+            others_item.setArt({"icon": self.icon})
+            xbmcplugin.addDirectoryItem(self.handle, others_folder_url, others_item, isFolder=True)
+
+        # Case 2: Build a specific subdirectory ("sports" or "others")
+        else:
+            # Fetch scheduled event livestreams
+            scheduled_url = "https://www.rts.ch/play/v3/api/rts/production/scheduled-livestreams"
+            scheduled_events = []
+            try:
+                req = urllib.request.Request(scheduled_url, headers=headers)
+                with urllib.request.urlopen(req) as response:
+                    scheduled_data = json.loads(response.read().decode('utf-8'))
+                    scheduled_events = scheduled_data.get("data", [])
+            except Exception as e:
+                log(f"Failed to fetch scheduled livestreams: {e}", xbmc.LOGWARNING)
+
+            now_utc = datetime.datetime.now(datetime.timezone.utc)
+            local_now = now_utc.astimezone()
+
+            # Filter out past events
+            active_and_upcoming = []
+            for item in scheduled_events:
+                try:
+                    valid_to = datetime.datetime.fromisoformat(item["validTo"].replace('Z', '+00:00'))
+                    if valid_to >= now_utc:
+                        active_and_upcoming.append(item)
+                except Exception:
+                    pass
+
+            # Filter by sub-category using first-word ALL CAPS heuristic
+            filtered_events = []
+            for item in active_and_upcoming:
+                title = item.get("title", "")
+                words = title.strip().split()
+                is_sport = False
+                if words:
+                    first_word = words[0].replace('/', '').replace('-', '')
+                    if first_word.isupper() and len(first_word) >= 3 and not first_word.isdigit():
+                        is_sport = True
+
+                if (sub_menu == "sports" and is_sport) or (sub_menu == "others" and not is_sport):
+                    filtered_events.append(item)
+
+            days_fr = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+
+            for item in filtered_events:
+                title = item.get("title")
+                urn = item.get("urn")
+                img_url = item.get("imageUrl")
+
+                if title and urn:
                     try:
-                        start = datetime.datetime.fromisoformat(prog["startTime"].replace('Z', '+00:00'))
-                        end = datetime.datetime.fromisoformat(prog["endTime"].replace('Z', '+00:00'))
-                        if start <= now <= end:
-                            current_show = prog["title"]
-                            break
-                        elif start > now:
-                            if not next_show:
-                                formatted_start = start.astimezone().strftime("%H:%M")
-                                next_show = f"À suivre : {prog['title']} ({formatted_start})"
+                        valid_from = datetime.datetime.fromisoformat(item["validFrom"].replace('Z', '+00:00'))
+                        valid_to = datetime.datetime.fromisoformat(item["validTo"].replace('Z', '+00:00'))
+
+                        if valid_from <= now_utc <= valid_to:
+                            prefix = "[COLOR red][LIVE] [/COLOR]"
+                        else:
+                            local_start = valid_from.astimezone()
+                            if local_start.date() == local_now.date():
+                                time_str = f"Aujourd'hui {local_start.strftime('%H:%M')}"
+                            elif local_start.date() == (local_now + datetime.timedelta(days=1)).date():
+                                time_str = f"Demain {local_start.strftime('%H:%M')}"
+                            else:
+                                day_name = days_fr[local_start.weekday()]
+                                time_str = f"{day_name} {local_start.strftime('%H:%M')}"
+                            prefix = f"[{time_str}] "
                     except Exception:
-                        pass
+                        prefix = ""
 
-                status = current_show if current_show else next_show
-                display_name = f"{title} - {status}" if status else title
+                    display_name = f"{prefix}{title}"
+                    list_item = xbmcgui.ListItem(label=display_name)
+                    list_item.setProperty("IsPlayable", "true")
+                    if img_url:
+                        list_item.setArt({"thumb": img_url})
 
-                list_item = xbmcgui.ListItem(label=display_name)
-                list_item.setProperty("IsPlayable", "true")
-                if img_url:
-                    list_item.setArt({"thumb": img_url})
-
-                plugin_url = self.build_url(mode=50, name=urn)
-                xbmcplugin.addDirectoryItem(self.handle, plugin_url, list_item, isFolder=False)
+                    plugin_url = self.build_url(mode=50, name=urn)
+                    xbmcplugin.addDirectoryItem(self.handle, plugin_url, list_item, isFolder=False)
 
 
 def log(msg, level=xbmc.LOGDEBUG):
@@ -268,12 +273,6 @@ def run():
         rts = RTSPlayTV()
         rts.menu_builder.build_main_menu(identifiers)
 
-        # Append RTS Sport to the main menu
-        list_item = xbmcgui.ListItem(label="RTS Sport")
-        list_item.setArt({"icon": rts.icon})
-        sport_url = rts.build_url(mode=80)
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), sport_url, list_item, isFolder=True)
-
         # Append Direct TV to the main menu
         tv_list_item = xbmcgui.ListItem(label="Direct TV")
         tv_list_item.setArt({"icon": rts.icon})
@@ -319,12 +318,8 @@ def run():
         RTSPlayTV().menu_builder.build_menu_by_urn(name)
     elif mode == 200:
         RTSPlayTV().menu_builder.build_homepage_menu()
-    elif mode == 80:
-        RTSPlayTV().build_sport_menu()
-    elif mode == 81:
-        RTSPlayTV().play_sport_stream(name)
     elif mode == 90:
-        RTSPlayTV().build_livetv_menu()
+        RTSPlayTV().build_livetv_menu(name)
     elif mode == 1000:
         RTSPlayTV().menu_builder.build_menu_apiv3(name, mode, page, page_hash)
 
