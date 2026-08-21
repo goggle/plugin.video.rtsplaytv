@@ -123,12 +123,12 @@ class RTSPlayTV(srgssr.SRGSSR):
 
             # Add folder items for the two sub-directories
             sport_folder_url = self.build_url(mode=90, name="sports")
-            sport_item = xbmcgui.ListItem(label="Sports en direct")
+            sport_item = xbmcgui.ListItem(label=self.plugin_language(30101))
             sport_item.setArt({"icon": self.icon})
             xbmcplugin.addDirectoryItem(self.handle, sport_folder_url, sport_item, isFolder=True)
 
             others_folder_url = self.build_url(mode=90, name="others")
-            others_item = xbmcgui.ListItem(label="Les autres directs")
+            others_item = xbmcgui.ListItem(label=self.plugin_language(30102))
             others_item.setArt({"icon": self.icon})
             xbmcplugin.addDirectoryItem(self.handle, others_folder_url, others_item, isFolder=True)
 
@@ -184,23 +184,30 @@ class RTSPlayTV(srgssr.SRGSSR):
 
             sorted_dates = sorted(grouped_events.keys())
 
-            days_fr = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
-            months_fr = [
-                "", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-                "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-            ]
+            def folder_name(dato):
+                weekdays = (
+                    self.language(30060),  # Monday
+                    self.language(30061),  # Tuesday
+                    self.language(30062),  # Wednesday
+                    self.language(30063),  # Thursday
+                    self.language(30064),  # Friday
+                    self.language(30065),  # Saturday
+                    self.language(30066),  # Sunday
+                )
+                today = local_now.date()
+                if dato == today:
+                    day_str = self.language(30058)  # Today
+                elif dato == today + datetime.timedelta(days=1):
+                    day_str = "%s, %s" % (weekdays[dato.weekday()], dato.strftime("%d.%m.%Y"))
+                elif dato == today - datetime.timedelta(days=1):
+                    day_str = self.language(30059)  # Yesterday
+                else:
+                    day_str = "%s, %s" % (weekdays[dato.weekday()], dato.strftime("%d.%m.%Y"))
+                return f"--- {day_str} ---"
 
             for local_date in sorted_dates:
                 # Build Date Header Label
-                day_name = days_fr[local_date.weekday()]
-                month_name = months_fr[local_date.month]
-
-                if local_date == local_now.date():
-                    header_label = f"--- Aujourd'hui ({day_name}, {local_date.day} {month_name}) ---"
-                elif local_date == (local_now + datetime.timedelta(days=1)).date():
-                    header_label = f"--- Demain ({day_name}, {local_date.day} {month_name}) ---"
-                else:
-                    header_label = f"--- {day_name}, {local_date.day} {month_name} ---"
+                header_label = folder_name(local_date)
 
                 # Add Date Header (non-playable)
                 header_item = xbmcgui.ListItem(label=header_label)
