@@ -132,18 +132,21 @@ class RTSPlayTV(srgssr.SRGSSR):
             others_item.setArt({"icon": self.icon})
             xbmcplugin.addDirectoryItem(self.handle, others_folder_url, others_item, isFolder=True)
 
-        # Case 2: Build a specific subdirectory ("sports" or "others")
+        # Case 2: Build a specific subdirectory ("sports" or "others") and its date folders/events
         else:
-            # Fetch scheduled event livestreams
+            sub_category, sep, date_filter = sub_menu.partition('_')
+
+            # Fetch scheduled event livestreams with caching
             scheduled_url = (
                 "https://il.srgssr.ch/integrationlayer/2.0/rts/mediaList/video/"
                 "scheduledLivestreams?vector=portalplay&pageSize=100"
             )
             scheduled_events = []
             try:
-                req = urllib.request.Request(scheduled_url, headers=headers)
-                with urllib.request.urlopen(req) as response:
-                    scheduled_data = json.loads(response.read().decode('utf-8'))
+                # Use SRGSSR's caching open_url to avoid redundant requests
+                response_text = self.open_url(scheduled_url)
+                if response_text:
+                    scheduled_data = json.loads(response_text)
                     scheduled_events = scheduled_data.get("mediaList") or scheduled_data.get("data") or []
             except Exception as e:
                 log(f"Failed to fetch scheduled livestreams: {e}", xbmc.LOGWARNING)
@@ -166,7 +169,7 @@ class RTSPlayTV(srgssr.SRGSSR):
             for item in active_and_upcoming:
                 is_sport = item.get("creatorUser") == "MMSport"
 
-                if (sub_menu == "sports" and is_sport) or (sub_menu == "others" and not is_sport):
+                if (sub_category == "sports" and is_sport) or (sub_category == "others" and not is_sport):
                     filtered_events.append(item)
 
             # Group filtered events by local date
@@ -196,26 +199,25 @@ class RTSPlayTV(srgssr.SRGSSR):
                 )
                 today = local_now.date()
                 if dato == today:
-                    day_str = self.language(30058)  # Today
-                elif dato == today + datetime.timedelta(days=1):
-                    day_str = "%s, %s" % (weekdays[dato.weekday()], dato.strftime("%d.%m.%Y"))
+                    return self.language(30058)  # Today
                 elif dato == today - datetime.timedelta(days=1):
-                    day_str = self.language(30059)  # Yesterday
-                else:
-                    day_str = "%s, %s" % (weekdays[dato.weekday()], dato.strftime("%d.%m.%Y"))
-                return f"--- {day_str} ---"
+                    return self.language(30059)  # Yesterday
+                return "%s, %s" % (weekdays[dato.weekday()], dato.strftime("%d.%m.%Y"))
 
-            for local_date in sorted_dates:
-                # Build Date Header Label
-                header_label = folder_name(local_date)
+            if not date_filter:
+                # Build Date Folders
+                for local_date in sorted_dates:
+                    folder_label = folder_name(local_date)
+                    folder_item = xbmcgui.ListItem(label=folder_label)
+                    folder_item.setArt({"icon": self.icon})
 
-                # Add Date Header (non-playable)
-                header_item = xbmcgui.ListItem(label=header_label)
-                header_item.setProperty("IsPlayable", "false")
-                xbmcplugin.addDirectoryItem(self.handle, self.build_url(mode=90), header_item, isFolder=False)
-
-                # Render events chronologically for this day
-                events_on_day = grouped_events[local_date]
+                    target_name = f"{sub_category}_{local_date.isoformat()}"
+                    folder_url = self.build_url(mode=90, name=target_name)
+                    xbmcplugin.addDirectoryItem(self.handle, folder_url, folder_item, isFolder=True)
+            else:
+                # Render events chronologically for the selected date
+                selected_date = datetime.date.fromisoformat(date_filter)
+                events_on_day = grouped_events.get(selected_date, [])
                 events_on_day.sort(key=lambda x: x[0])
 
                 for start_time, item in events_on_day:
