@@ -123,12 +123,12 @@ class RTSPlayTV(srgssr.SRGSSR):
 
             # Add folder items for the two sub-directories
             sport_folder_url = self.build_url(mode=90, name="sports")
-            sport_item = xbmcgui.ListItem(label=self.plugin_language(30101))
+            sport_item = xbmcgui.ListItem(label=self.language(30101) or self.plugin_language(30101) or "Sports Live")
             sport_item.setArt({"icon": self.icon})
             xbmcplugin.addDirectoryItem(self.handle, sport_folder_url, sport_item, isFolder=True)
 
             others_folder_url = self.build_url(mode=90, name="others")
-            others_item = xbmcgui.ListItem(label=self.plugin_language(30102))
+            others_item = xbmcgui.ListItem(label=self.language(30102) or self.plugin_language(30102) or "Other Live Streams")
             others_item.setArt({"icon": self.icon})
             xbmcplugin.addDirectoryItem(self.handle, others_folder_url, others_item, isFolder=True)
 
