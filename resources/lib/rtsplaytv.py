@@ -305,7 +305,9 @@ class RTSPlayTV(srgssr.SRGSSR):
                         if img_url:
                             list_item.setArt({"thumb": img_url})
 
-                        plugin_url = self.build_url(mode=50, name=urn)
+                        plugin_url = self.build_url(
+                            mode=50, name=urn, title=title
+                        )
                         xbmcplugin.addDirectoryItem(
                             self.handle, plugin_url, list_item, isFolder=False
                         )
@@ -354,6 +356,10 @@ def run():
         page = unquote_plus(params["page"])
     except Exception:
         page = None
+    try:
+        title = unquote_plus(params["title"])
+    except Exception:
+        title = None
 
     log("Mode: " + str(mode))
     log("URL : " + str(url))
@@ -417,7 +423,7 @@ def run():
             name, mode, page=page, page_token=page_hash
         )
     elif mode == 50:
-        RTSPlayTV().player.play_video(name)
+        RTSPlayTV().player.play_video(name, title=title)
     elif mode == 100:
         RTSPlayTV().menu_builder.build_menu_by_urn(name)
     elif mode == 200:
